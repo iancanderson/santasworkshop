@@ -622,19 +622,9 @@ function getEventCoordinates(e, canvas) {
     };
 }
 
-// Add debug overlay for iPad testing
-function showDebug(msg) {
-    const debug = document.getElementById('debug-log');
-    if (debug) {
-        debug.innerHTML = msg + '<br>' + debug.innerHTML.split('<br>').slice(0, 5).join('<br>');
-    }
-}
-
 // Mouse and touch events for workshop
 function handlePointerDown(e) {
     if (gameState !== GAME_STATE.WORKSHOP) return;
-    
-    showDebug(`DOWN: type=${e.type} touches=${e.touches?.length || 0}`);
     
     // CRITICAL: Prevent default BEFORE any checks for Safari
     e.preventDefault();
@@ -643,8 +633,6 @@ function handlePointerDown(e) {
     const coords = getEventCoordinates(e, canvas);
     const mouseX = coords.x;
     const mouseY = coords.y;
-    
-    showDebug(`Coords: ${mouseX.toFixed(0)}, ${mouseY.toFixed(0)}`);
     
     // If assembled, treat entire toy as one clickable object
     if (currentToy && currentToy.assembled) {
@@ -656,7 +644,6 @@ function handlePointerDown(e) {
                 selectedPart = part;
                 offsetX = mouseX - part.x;
                 offsetY = mouseY - part.y;
-                showDebug(`Selected: ${part.partName}`);
                 break;
             }
         }
@@ -669,14 +656,9 @@ function handlePointerDown(e) {
                 selectedPart = part;
                 offsetX = mouseX - part.x;
                 offsetY = mouseY - part.y;
-                showDebug(`Selected: ${part.partName}`);
                 break;
             }
         }
-    }
-    
-    if (!selectedPart) {
-        showDebug(`No part selected at ${mouseX.toFixed(0)}, ${mouseY.toFixed(0)}`);
     }
 }
 
@@ -692,8 +674,6 @@ function handlePointerMove(e) {
     e.stopPropagation();
     
     if (!selectedPart) return;
-    
-    showDebug(`MOVE: selected=${selectedPart.partName}`);
     
     const coords = getEventCoordinates(e, canvas);
     const mouseX = coords.x;
@@ -827,7 +807,6 @@ function handlePointerUp(e) {
         }
     } else {
         // No reference yet, or we ARE the reference - try to connect to any nearby piece
-        console.log('No reference group yet, trying to connect nearby pieces');
         let connected = false;
         toyParts.forEach(otherPart => {
             if (connected) return;
@@ -839,11 +818,8 @@ function handlePointerUp(e) {
             const dy = (selectedPart.y + selectedPart.height / 2) - (otherPart.y + otherPart.height / 2);
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            console.log(`Distance to other part: ${distance.toFixed(1)} (snap at ${snapDistance})`);
-            
             if (distance < snapDistance) {
                 // Connect these parts!
-                console.log('CONNECTING PARTS!', selectedPart.partName, otherPart.partName);
                 connectParts(selectedPart, otherPart);
                 connected = true;
             }
@@ -858,8 +834,6 @@ canvas.addEventListener('touchend', handlePointerUp, { passive: false });
 canvas.addEventListener('touchcancel', handlePointerUp, { passive: false });
 
 function connectParts(part1, part2) {
-    console.log('connectParts called:', part1.partName, part2.partName);
-    
     // Add to each other's connection lists
     if (!part1.connectedParts.includes(part2.id)) {
         part1.connectedParts.push(part2.id);
@@ -867,8 +841,6 @@ function connectParts(part1, part2) {
     if (!part2.connectedParts.includes(part1.id)) {
         part2.connectedParts.push(part1.id);
     }
-    
-    console.log('Part1 connections:', part1.connectedParts.length, 'Part2 connections:', part2.connectedParts.length);
     
     // Calculate the expected position of part2 relative to part1 based on grid positions
     const row1 = part1.quadrant.gridRow;
