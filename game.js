@@ -601,12 +601,21 @@ function gameOver(won, message) {
 // Helper function to get coordinates from mouse or touch event
 function getEventCoordinates(e, canvas) {
     const rect = canvas.getBoundingClientRect();
+    let touch = null;
+    
     if (e.touches && e.touches.length > 0) {
+        touch = e.touches[0];
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+        touch = e.changedTouches[0];
+    }
+    
+    if (touch) {
         return {
-            x: e.touches[0].clientX - rect.left,
-            y: e.touches[0].clientY - rect.top
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top
         };
     }
+    
     return {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
@@ -617,9 +626,8 @@ function getEventCoordinates(e, canvas) {
 function handlePointerDown(e) {
     if (gameState !== GAME_STATE.WORKSHOP) return;
     
-    if (e.cancelable) {
-        e.preventDefault();
-    }
+    // CRITICAL: Prevent default BEFORE any checks for Safari
+    e.preventDefault();
     e.stopPropagation();
     
     const coords = getEventCoordinates(e, canvas);
@@ -654,15 +662,15 @@ function handlePointerDown(e) {
     }
 }
 
-canvas.addEventListener('mousedown', handlePointerDown);
+// Add event listeners
+canvas.addEventListener('mousedown', handlePointerDown, false);
 canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
 
 function handlePointerMove(e) {
     if (gameState !== GAME_STATE.WORKSHOP || !selectedPart) return;
     
-    if (e.cancelable) {
-        e.preventDefault();
-    }
+    // CRITICAL: Prevent default BEFORE any checks for Safari
+    e.preventDefault();
     e.stopPropagation();
     
     const coords = getEventCoordinates(e, canvas);
@@ -685,7 +693,7 @@ function handlePointerMove(e) {
     }
 }
 
-canvas.addEventListener('mousemove', handlePointerMove);
+canvas.addEventListener('mousemove', handlePointerMove, false);
 canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
 
 function moveConnectedParts(part, deltaX, deltaY, movedIds) {
@@ -706,9 +714,8 @@ function moveConnectedParts(part, deltaX, deltaY, movedIds) {
 function handlePointerUp(e) {
     if (gameState !== GAME_STATE.WORKSHOP || !selectedPart) return;
     
-    if (e.cancelable) {
-        e.preventDefault();
-    }
+    // CRITICAL: Prevent default BEFORE any checks for Safari
+    e.preventDefault();
     e.stopPropagation();
     
     const snapDistance = 60;
@@ -824,8 +831,9 @@ function handlePointerUp(e) {
     selectedPart = null;
 }
 
-canvas.addEventListener('mouseup', handlePointerUp);
+canvas.addEventListener('mouseup', handlePointerUp, false);
 canvas.addEventListener('touchend', handlePointerUp, { passive: false });
+canvas.addEventListener('touchcancel', handlePointerUp, { passive: false });
 
 function connectParts(part1, part2) {
     console.log('connectParts called:', part1.partName, part2.partName);
@@ -911,6 +919,7 @@ document.addEventListener('keyup', (e) => {
 canvas.addEventListener('touchstart', (e) => {
     if (gameState === GAME_STATE.SLEIGH) {
         e.preventDefault();
+        e.stopPropagation();
         // Tap to drop present
         if (currentToyIndex < completedToys.length) {
             presents.push({
@@ -921,7 +930,7 @@ canvas.addEventListener('touchstart', (e) => {
             });
         }
     }
-});
+}, { passive: false });
 
 // Update sleigh position based on keys or touch
 setInterval(() => {
