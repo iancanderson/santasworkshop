@@ -598,13 +598,29 @@ function gameOver(won, message) {
     instructionsDiv.style.display = 'block';
 }
 
-// Mouse events for workshop
-canvas.addEventListener('mousedown', (e) => {
+// Helper function to get coordinates from mouse or touch event
+function getEventCoordinates(e, canvas) {
+    const rect = canvas.getBoundingClientRect();
+    if (e.touches && e.touches.length > 0) {
+        return {
+            x: e.touches[0].clientX - rect.left,
+            y: e.touches[0].clientY - rect.top
+        };
+    }
+    return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+    };
+}
+
+// Mouse and touch events for workshop
+function handlePointerDown(e) {
     if (gameState !== GAME_STATE.WORKSHOP) return;
     
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    e.preventDefault();
+    const coords = getEventCoordinates(e, canvas);
+    const mouseX = coords.x;
+    const mouseY = coords.y;
     
     // If assembled, treat entire toy as one clickable object
     if (currentToy && currentToy.assembled) {
@@ -632,14 +648,18 @@ canvas.addEventListener('mousedown', (e) => {
             }
         }
     }
-});
+}
 
-canvas.addEventListener('mousemove', (e) => {
+canvas.addEventListener('mousedown', handlePointerDown);
+canvas.addEventListener('touchstart', handlePointerDown);
+
+function handlePointerMove(e) {
     if (gameState !== GAME_STATE.WORKSHOP || !selectedPart) return;
     
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    e.preventDefault();
+    const coords = getEventCoordinates(e, canvas);
+    const mouseX = coords.x;
+    const mouseY = coords.y;
     
     const deltaX = (mouseX - offsetX) - selectedPart.x;
     const deltaY = (mouseY - offsetY) - selectedPart.y;
@@ -655,7 +675,10 @@ canvas.addEventListener('mousemove', (e) => {
         currentToy.completedX += deltaX;
         currentToy.completedY += deltaY;
     }
-});
+}
+
+canvas.addEventListener('mousemove', handlePointerMove);
+canvas.addEventListener('touchmove', handlePointerMove);
 
 function moveConnectedParts(part, deltaX, deltaY, movedIds) {
     part.connectedParts.forEach(connectedId => {
@@ -672,9 +695,10 @@ function moveConnectedParts(part, deltaX, deltaY, movedIds) {
     });
 }
 
-canvas.addEventListener('mouseup', (e) => {
+function handlePointerUp(e) {
     if (gameState !== GAME_STATE.WORKSHOP || !selectedPart) return;
     
+    e.preventDefault();
     const snapDistance = 60;
     
     // If toy is assembled, check if dragging to toy bin
@@ -786,7 +810,10 @@ canvas.addEventListener('mouseup', (e) => {
     }
     
     selectedPart = null;
-});
+}
+
+canvas.addEventListener('mouseup', handlePointerUp);
+canvas.addEventListener('touchend', handlePointerUp);
 
 function connectParts(part1, part2) {
     console.log('connectParts called:', part1.partName, part2.partName);
@@ -841,8 +868,10 @@ function connectParts(part1, part2) {
     }
 }
 
-// Keyboard events for sleigh
+// Keyboard and touch events for sleigh
 const keys = {};
+let touchControls = { left: false, right: false, up: false, down: false, drop: false };
+
 document.addEventListener('keydown', (e) => {
     keys[e.key] = true;
     
@@ -866,7 +895,23 @@ document.addEventListener('keyup', (e) => {
     keys[e.key] = false;
 });
 
-// Update sleigh position based on keys
+// Touch controls for sleigh - tap screen to drop present
+canvas.addEventListener('touchstart', (e) => {
+    if (gameState === GAME_STATE.SLEIGH) {
+        e.preventDefault();
+        // Tap to drop present
+        if (currentToyIndex < completedToys.length) {
+            presents.push({
+                x: sleigh.x + sleigh.width / 2,
+                y: sleigh.y + 40,
+                hit: false,
+                toy: completedToys[currentToyIndex]
+            });
+        }
+    }
+});
+
+// Update sleigh position based on keys or touch
 setInterval(() => {
     if (gameState === GAME_STATE.SLEIGH) {
         if (keys['ArrowUp'] && sleigh.y > 50) {
@@ -883,3 +928,27 @@ setInterval(() => {
         }
     }
 }, 16);
+
+// Add gyroscope/tilt controls for mobile
+if (window.DeviceOrientationEvent) {
+    window.addEventListener('deviceorientation', (e) => {
+        if (gameState === GAME_STATE.SLEIGH && e.beta !== null && e.gamma !== null) {
+            // beta is front-to-back tilt (-180 to 180)
+            // gamma is left-to-right tilt (-90 to 90)
+            
+            // Use gamma for left-right movement
+            if (e.gamma > 10 && sleigh.x < canvas.width - sleigh.width) {
+                sleigh.x += sleigh.speed * 0.5;
+            } else if (e.gamma < -10 && sleigh.x > 0) {
+                sleigh.x -= sleigh.speed * 0.5;
+            }
+            
+            // Use beta for up-down movement
+            if (e.beta < 60 && sleigh.y > 50) {
+                sleigh.y -= sleigh.speed * 0.3;
+            } else if (e.beta > 80 && sleigh.y < canvas.height - 150) {
+                sleigh.y += sleigh.speed * 0.3;
+            }
+        }
+    });
+}
