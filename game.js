@@ -617,7 +617,11 @@ function getEventCoordinates(e, canvas) {
 function handlePointerDown(e) {
     if (gameState !== GAME_STATE.WORKSHOP) return;
     
-    e.preventDefault();
+    if (e.cancelable) {
+        e.preventDefault();
+    }
+    e.stopPropagation();
+    
     const coords = getEventCoordinates(e, canvas);
     const mouseX = coords.x;
     const mouseY = coords.y;
@@ -651,12 +655,16 @@ function handlePointerDown(e) {
 }
 
 canvas.addEventListener('mousedown', handlePointerDown);
-canvas.addEventListener('touchstart', handlePointerDown);
+canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
 
 function handlePointerMove(e) {
     if (gameState !== GAME_STATE.WORKSHOP || !selectedPart) return;
     
-    e.preventDefault();
+    if (e.cancelable) {
+        e.preventDefault();
+    }
+    e.stopPropagation();
+    
     const coords = getEventCoordinates(e, canvas);
     const mouseX = coords.x;
     const mouseY = coords.y;
@@ -678,7 +686,7 @@ function handlePointerMove(e) {
 }
 
 canvas.addEventListener('mousemove', handlePointerMove);
-canvas.addEventListener('touchmove', handlePointerMove);
+canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
 
 function moveConnectedParts(part, deltaX, deltaY, movedIds) {
     part.connectedParts.forEach(connectedId => {
@@ -698,7 +706,11 @@ function moveConnectedParts(part, deltaX, deltaY, movedIds) {
 function handlePointerUp(e) {
     if (gameState !== GAME_STATE.WORKSHOP || !selectedPart) return;
     
-    e.preventDefault();
+    if (e.cancelable) {
+        e.preventDefault();
+    }
+    e.stopPropagation();
+    
     const snapDistance = 60;
     
     // If toy is assembled, check if dragging to toy bin
@@ -813,7 +825,7 @@ function handlePointerUp(e) {
 }
 
 canvas.addEventListener('mouseup', handlePointerUp);
-canvas.addEventListener('touchend', handlePointerUp);
+canvas.addEventListener('touchend', handlePointerUp, { passive: false });
 
 function connectParts(part1, part2) {
     console.log('connectParts called:', part1.partName, part2.partName);
