@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Test</title>
+</head>
+<body>
+    <canvas id="test" width="400" height="400" style="border: 1px solid black;"></canvas>
+    <div id="log"></div>
+    <script>
+        const canvas = document.getElementById('test');
+        const ctx = canvas.getContext('2d');
+        const log = document.getElementById('log');
+        
+        // Test emoji rendering
+        ctx.font = '150px Arial';
+        ctx.fillText('🧸', 10, 150);
+        
+        // Test clipping
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(200, 0, 50, 50);
+        ctx.clip();
+        ctx.fillText('🧸', 200, 150);
+        ctx.restore();
+        
+        log.innerHTML = 'Emoji test rendered. Can you see a full bear on the left and a clipped piece on the right?';
+    </script>
+</body>
+</html>
