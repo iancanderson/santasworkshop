@@ -622,9 +622,19 @@ function getEventCoordinates(e, canvas) {
     };
 }
 
+// Add debug overlay for iPad testing
+function showDebug(msg) {
+    const debug = document.getElementById('debug-log');
+    if (debug) {
+        debug.innerHTML = msg + '<br>' + debug.innerHTML.split('<br>').slice(0, 5).join('<br>');
+    }
+}
+
 // Mouse and touch events for workshop
 function handlePointerDown(e) {
     if (gameState !== GAME_STATE.WORKSHOP) return;
+    
+    showDebug(`DOWN: type=${e.type} touches=${e.touches?.length || 0}`);
     
     // CRITICAL: Prevent default BEFORE any checks for Safari
     e.preventDefault();
@@ -633,6 +643,8 @@ function handlePointerDown(e) {
     const coords = getEventCoordinates(e, canvas);
     const mouseX = coords.x;
     const mouseY = coords.y;
+    
+    showDebug(`Coords: ${mouseX.toFixed(0)}, ${mouseY.toFixed(0)}`);
     
     // If assembled, treat entire toy as one clickable object
     if (currentToy && currentToy.assembled) {
@@ -644,6 +656,7 @@ function handlePointerDown(e) {
                 selectedPart = part;
                 offsetX = mouseX - part.x;
                 offsetY = mouseY - part.y;
+                showDebug(`Selected: ${part.partName}`);
                 break;
             }
         }
@@ -656,9 +669,14 @@ function handlePointerDown(e) {
                 selectedPart = part;
                 offsetX = mouseX - part.x;
                 offsetY = mouseY - part.y;
+                showDebug(`Selected: ${part.partName}`);
                 break;
             }
         }
+    }
+    
+    if (!selectedPart) {
+        showDebug(`No part selected at ${mouseX.toFixed(0)}, ${mouseY.toFixed(0)}`);
     }
 }
 
@@ -667,11 +685,15 @@ canvas.addEventListener('mousedown', handlePointerDown, false);
 canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
 
 function handlePointerMove(e) {
-    if (gameState !== GAME_STATE.WORKSHOP || !selectedPart) return;
+    if (gameState !== GAME_STATE.WORKSHOP) return;
     
     // CRITICAL: Prevent default BEFORE any checks for Safari
     e.preventDefault();
     e.stopPropagation();
+    
+    if (!selectedPart) return;
+    
+    showDebug(`MOVE: selected=${selectedPart.partName}`);
     
     const coords = getEventCoordinates(e, canvas);
     const mouseX = coords.x;
